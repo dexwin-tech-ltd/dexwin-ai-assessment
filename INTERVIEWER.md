@@ -3,22 +3,67 @@
 Candidate-facing doc is `README.md`. Do **not** paste this file into the candidate chat.
 
 **Timebox:** 60–75 minutes  
-**Primary workflow:** Cursor (Open Folder), not Codespaces  
-**Default run:** `USE_FIXTURES=true` — no API spend  
-**Optional:** capped org OpenAI-compatible key, `USE_FIXTURES=false`
+**Primary environment:** GitHub Codespaces (TaskFlow-style). Local Docker is backup only.  
+**App AI:** capped org OpenAI-compatible key via Codespaces secret `OPENAI_API_KEY`, or fixture mode  
+**Coding assistants:** none. Do not recommend Copilot, Cursor, ChatGPT, or similar. This is not a “use AI to code” screen.
 
 Northline is fictional. The baseline is intentionally naive.
 
 ---
 
+## Org key for the app under test
+
+The **only** model in the session is the Northline RAG pipeline. It reads:
+
+- `OPENAI_API_KEY` (required for live calls)
+- optional `OPENAI_BASE_URL` (default `https://api.openai.com/v1`)
+- optional `OPENAI_MODEL` (default `gpt-4o-mini`)
+
+That key is **not** a coding-assistant credential.
+
+### Set a Codespaces secret (live mode)
+
+On the **canonical** assessment repo (you need admin):
+
+1. GitHub → **Settings** → **Secrets and variables** → **Codespaces**
+2. **New repository secret**
+   - Name: `OPENAI_API_KEY`
+   - Value: the **capped org** OpenAI-compatible key
+3. Optional secrets: `OPENAI_BASE_URL`, `OPENAI_MODEL` if you are not using default OpenAI.
+
+Org-level Codespaces secrets work the same way if you scope them to this repository.
+
+**Who should create the Codespace**
+
+Repo/org Codespaces secrets are available to codespaces created **on that repository**. They do **not** copy to a candidate’s **fork**.
+
+| Session shape | Live API | What to do |
+| --- | --- | --- |
+| Candidate is a **collaborator** and Codespaces **this** repo | Yes, if the secret is set | Preferred for live calls |
+| Candidate **forks** then Codespaces the fork | Secret will be missing | Use **fixture mode**, or paste the capped key into `.env` in the session (do not commit it) |
+
+If a key is present in the environment and `USE_FIXTURES` is not `true`, the app uses live Chat Completions. If the key is absent, it uses fixtures automatically.
+
+### Force fixture mode
+
+`.env` or environment: `USE_FIXTURES=true`  
+Use this when the org key is unavailable, you want zero spend, or you want deterministic eval.
+
+Fixture mode is enough to pass the screen (retrieval, prompts, guardrails, re-score). Live API is extra, never required.
+
+---
+
 ## Setup for the session
 
-1. Candidate forks/clones, opens the folder in Cursor, copies `.env.example` → `.env`.
-2. Confirm fixture mode: `npm run dev` or `docker compose up --build`, badge says Fixture, [http://localhost:3000](http://localhost:3000) loads.
-3. If you want live calls, put a **capped** org key in `OPENAI_API_KEY` (`.env` or Cursor env/secrets UI) and set `USE_FIXTURES=false`.
-4. Have them run `npm run eval` once before they edit anything. Record the score (expect **0 / 10** on the untouched baseline; a lucky 1 is still a fail-the-row start).
+1. Candidate opens **Codespaces** on the repo you specified (collaborator-on-canonical **or** their fork). Wait for **Assessment environment ready** and port **3000**.
+2. Confirm the badge: **Fixture mode** vs **Live API**.
+3. Have them run `npm run eval` (or **Run eval set** in the UI) before they edit anything. Record the score (expect **0 / 10** on the untouched baseline).
 
-If they cannot boot fixture mode in ~10 minutes, that is already a signal. Help with Docker vs Node, then continue.
+Backup if Codespaces fails: `cp .env.example .env` then `docker compose up --build`.
+
+If they cannot boot fixture mode in ~10 minutes, that is already a signal. Help, then continue.
+
+Do **not** tell them to install or open a coding assistant. If they use one unprompted, still grade **ownership of the diff** — a dump they cannot walk through is a fail.
 
 ---
 
@@ -59,11 +104,11 @@ A question **passes** only if it is correct (includes required phrases or a refu
 
 ## Rubric
 
-Score the **conversation**, not just the last eval number. Cursor Agent doing the entire rewrite while they shrug is a fail even at 10/10.
+Score the **conversation**, not just the last eval number. A 10/10 they cannot explain is a fail.
 
 ### Hire / pass
 
-- Boots fixture mode and runs eval without you driving the keyboard
+- Boots the app (Codespaces or Docker) and runs eval without you driving the keyboard
 - Diagnoses ≥2 planted issues (chunking, top-1 retrieve, missing sources, ungrounded prompt, no refuse)
 - Makes **meaningful** pipeline changes (not CSS, not renaming files)
 - Eval moves in the right direction (e.g. 0 → **7+ / 10**, or 5+ with a clear leftover they can explain)
@@ -84,7 +129,7 @@ Score the **conversation**, not just the last eval number. Cursor Agent doing th
 - Cosmetic-only diff
 - “The model is hallucinating” with no look at retrieve/prompt
 - Still invents stock / CEO phone / competitor after they claim they are done
-- Lets Agent replace the repo and cannot walk through `ask()`
+- Cannot walk through `ask()` / their own diff
 - Commits a real key or pastes secrets into the corpus
 
 ### Borderline
@@ -124,8 +169,9 @@ They do **not** need LangChain, a vector DB, rerankers, or auth.
 
 ## Conduct notes
 
-- Pair in Cursor. They drive.
-- Fixture mode is the official path. Live API is extra, never required to pass.
+- Pair in the Codespace (VS Code in the browser). They drive.
+- Fixture mode is a full-credit path. Live API is extra.
+- Do not steer them toward a coding assistant.
 - If they want to add a dependency, make them justify it (clock is ticking).
 - If they “finish” at 40 minutes, push on eval design or a failure case (partial retrieve, conflicting docs) rather than new features.
 - After the session, keep their branch; the before/after `npm run eval` transcript is the artifact.
@@ -136,7 +182,7 @@ They do **not** need LangChain, a vector DB, rerankers, or auth.
 
 | Signal | Call |
 | --- | --- |
-| Fixture boot + diagnosis + eval ≥7/10 + can explain | **Pass** |
+| Boot + diagnosis + eval ≥7/10 + can explain | **Pass** |
 | Eval 5–6/10 but crisp diagnosis and a clear next fix | **Lean pass** if senior-adjacent judgment is strong |
 | Eval high, no ownership of the diff | **Fail** |
 | Still hallucinating refuse questions | **Fail** |

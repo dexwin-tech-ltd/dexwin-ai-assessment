@@ -130,10 +130,15 @@ export function extractiveAnswer(context, question) {
   const qWords = tokenize(question);
   if (!qWords.length) return null;
 
-  const units = context
-    .split(/(?<=[.!?])\s+|\n+/)
+  const body = context
+    .replace(/\[source:\s*[^\]]+\]/gi, " ")
+    .replace(/\b[\w-]+\.md\b/g, " ")
+    .replace(/\s+/g, " ");
+
+  const units = body
+    .split(/(?<=[.!?])\s+/)
     .map((s) => s.trim())
-    .filter((s) => s.length > 20);
+    .filter((s) => s.length > 24 && !/^sources?:/i.test(s));
 
   const scored = units
     .map((s) => {
@@ -141,7 +146,7 @@ export function extractiveAnswer(context, question) {
       return { s, hits };
     })
     .filter((x) => x.hits >= 2)
-    .sort((a, b) => b.hits - a.hits);
+    .sort((a, b) => b.hits - a.hits || b.s.length - a.s.length);
 
   if (!scored.length) return null;
   return scored

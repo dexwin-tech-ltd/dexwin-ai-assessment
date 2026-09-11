@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 /**
  * Minimal .env loader — no extra dependency.
- * Existing process.env keys win (Cursor secrets / compose / shell).
+ * Existing process.env keys win (Codespaces secrets / compose / shell).
  */
 export function loadEnv(cwd = process.cwd()) {
   const path = resolve(cwd, ".env");

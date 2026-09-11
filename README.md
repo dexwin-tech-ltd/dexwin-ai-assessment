@@ -1,8 +1,8 @@
 # Dexwin live AI/LLM assessment
 
-Cursor-first screen. Timebox **60–75 minutes**. You will run a tiny, intentionally naive RAG app over a fake company FAQ corpus, then improve retrieval, prompts, and guardrails against a fixed eval set.
+Timebox **60–75 minutes**. You will run a tiny, intentionally naive RAG app over a fake company FAQ corpus, then improve retrieval, prompts, and guardrails against a fixed eval set.
 
-This is **not** a GitHub Codespaces exercise. Work in [Cursor](https://cursor.com).
+**Preferred environment:** GitHub Codespaces (same idea as the TaskFlow fullstack assessment). Local Docker is the backup. You are **not** expected to use a coding AI assistant. The only model in the loop is the Northline ops app under test.
 
 The company in the corpus (**Northline**) is fictional. Nothing here is a real policy or a real secret.
 
@@ -15,55 +15,68 @@ A small Node.js (no npm dependencies) internal-ops assistant:
 - `docs/` — 12 short markdown FAQs
 - `src/` — naive chunk → retrieve → prompt → model pipeline
 - `eval/questions.json` — 10 questions (some answerable, some should be refused)
-- Fixture mode so you can work **without** a vendor API key
+- Fixture mode so the session can run **without** a live vendor key
 
 The baseline is supposed to look a bit dumb. Your job is to make it trustworthy enough that an interviewer would ship a v0.
 
 ---
 
-## Setup (Cursor)
+## Two different “keys” (do not mix them up)
 
-1. Fork or clone this repo.
-2. Open the folder in Cursor: **File → Open Folder**.
-3. Copy the env file:
+| | What | Who sets it |
+| --- | --- | --- |
+| **App under test** | `OPENAI_API_KEY` (optional `OPENAI_BASE_URL`, `OPENAI_MODEL`) | Interviewer: Codespaces secret or `.env`. Capped **org** OpenAI-compatible key. |
+| **Fixture fallback** | `USE_FIXTURES=true` | Default when no key is present. Canned model responses so you can still work on retrieval, eval, and guardrails. |
 
-   ```bash
-   cp .env.example .env
-   ```
-
-4. Leave `USE_FIXTURES=true` unless you were given a **capped org** OpenAI-compatible key.
-
-   If you have a key, put it in `OPENAI_API_KEY` in `.env`, or set the same variable in Cursor’s environment / secrets UI if your session uses that. Then set `USE_FIXTURES=false`.
-
-   Do not commit `.env`. Do not use a personal unlimited key.
-
-5. Run one of:
-
-   ```bash
-   docker compose up --build
-   ```
-
-   or, with Node 18+:
-
-   ```bash
-   npm install
-   npm run dev
-   ```
-
-   (`npm install` is a no-op for runtime deps; the app uses Node builtins + `fetch`.)
-
-6. Open [http://localhost:3000](http://localhost:3000). You should see a **Fixture mode** badge when no live key is in use.
+There is no coding-assistant setup for this screen.
 
 ---
 
-## Fixture vs live API
+## Setup — GitHub Codespaces (preferred)
+
+Use this when the interviewer has asked you to work from GitHub:
+
+1. Fork this repository **or** open the repo they added you to as a collaborator (follow the interviewer’s instruction).
+2. Select **Code** → **Codespaces** → **Create codespace on main**.
+3. Wait until the terminal shows **Assessment environment ready**. The Codespace copies `.env` if needed and starts the app.
+4. Open port **3000** from the **Ports** panel if the browser preview does not appear. You should see a **Fixture mode** or **Live API** badge.
+5. Keep forwarded ports private.
+
+The first Codespace create may take a few minutes. The assessment clock should start only after **Assessment environment ready**.
+
+**Live vs fixture in Codespaces**
+
+- If the interviewer set a Codespaces secret named `OPENAI_API_KEY` on this repo (and you are working **on that repo**, not a fork), the app uses the live OpenAI-compatible API.
+- If there is no key (typical on a **fork** — upstream secrets do not copy), the app runs in **fixture mode**. That is enough to complete the screen.
+- To force canned responses even when a key exists: set `USE_FIXTURES=true` in `.env`.
+
+Do not commit `.env`. Do not paste a personal unlimited key.
+
+---
+
+## Setup — local Docker (backup)
+
+If Codespaces is unavailable:
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Then open [http://localhost:3000](http://localhost:3000).
+
+Leave `OPENAI_API_KEY` empty for fixture mode. If the interviewer gives you a capped org key, put it in `.env` (or export it) and do **not** set `USE_FIXTURES=true`.
+
+---
+
+## Fixture vs live API (the RAG app)
 
 | Mode | When | What happens |
 | --- | --- | --- |
-| **Fixture** (`USE_FIXTURES=true`, or unset and no key) | Default. Use this unless asked otherwise. | No network. A deterministic stand-in model. It will hallucinate unless retrieved context + the system prompt give it something better. |
-| **Live** (`USE_FIXTURES=false` + `OPENAI_API_KEY`) | Optional, if a capped org key is provided. | `POST {OPENAI_BASE_URL}/chat/completions` (OpenAI-compatible). `OPENAI_BASE_URL` and `OPENAI_MODEL` are overridable. |
+| **Fixture** | `USE_FIXTURES=true`, **or** no `OPENAI_API_KEY` | No vendor call. A deterministic stand-in model. It will hallucinate unless retrieved context + the system prompt give it something better. |
+| **Live** | `OPENAI_API_KEY` set and `USE_FIXTURES` is not `true` | `POST {OPENAI_BASE_URL}/chat/completions` (OpenAI-compatible). |
 
-Fixture scoring **does** move when you change chunking, retrieval, and the system prompt. The mock model is shallowly instruction-following (grounding / refuse / cite). That is on purpose: you can iterate offline.
+Fixture scoring **does** move when you change chunking, retrieval, and the system prompt. The mock model is shallowly instruction-following (grounding / refuse / cite).
 
 ---
 
@@ -71,7 +84,7 @@ Fixture scoring **does** move when you change chunking, retrieval, and the syste
 
 | Window | Do this |
 | --- | --- |
-| 0–10 min | Boot fixture mode. Click the sample questions. Run **Run eval set** or `npm run eval`. A low score is expected. |
+| 0–10 min | Confirm the app is up. Click the sample questions. Run **Run eval set** or `npm run eval`. A low score is expected. |
 | 10–25 min | Read `src/chunk.js`, `src/retrieve.js`, `src/prompt.js`, `src/pipeline.js`, and two or three files in `docs/`. Form a diagnosis. Talk out loud. |
 | 25–55 min | Improve the pipeline. Re-run eval often. Aim to ground answers, cite sources, and refuse questions the corpus cannot support. |
 | last 10–15 min | Freeze. Walk through before/after scores and one tradeoff you would not do in 75 minutes. |
@@ -96,7 +109,7 @@ Eval exit code is `1` until every question passes — that is normal on the base
 - Can you run the app and the eval without ceremony?
 - Do you find the actual failure modes (not just “the model is dumb”)?
 - Do answers stay inside the corpus, with citations, and refuse cleanly when they should?
-- Do you use Cursor as an accelerator and still own the design?
+- Can you explain the diff you made?
 
 `INTERVIEWER.md` is for the interviewer. Ignore it unless they share a prompt from it.
 

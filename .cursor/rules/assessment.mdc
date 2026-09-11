@@ -1,10 +1,10 @@
 ---
-description: Dexwin live interview assessment — keep the naive baseline intentional
+description: Dexwin live interview assessment — Codespaces, no coding-assistant coaching
 alwaysApply: true
 ---
 
 This repo is a Dexwin live AI/LLM interview assessment.
 
-The Northline ops RAG app is an intentionally broken/naive baseline. Candidates are expected to diagnose and improve retrieval, prompts, grounding, citations, and refusals.
+Preferred environment is GitHub Codespaces (Docker is backup). Candidates are not expected to use a coding AI assistant; do not recommend Copilot, Cursor, ChatGPT, or similar.
 
-Do not silently rewrite the pipeline into a production RAG stack. Explain tradeoffs. Do not commit `.env` or API keys. Prefer fixture mode (`USE_FIXTURES=true`) unless a capped org key is set.
+The only model in the loop is the Northline ops RAG app (`OPENAI_API_KEY` for live OpenAI-compatible calls, `USE_FIXTURES=true` for canned responses). The baseline is intentionally naive. Do not silently rewrite it into a production RAG stack. Do not commit `.env` or API keys.
