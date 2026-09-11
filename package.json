@@ -1,0 +1,15 @@
+{
+  "name": "dexwin-ai-assessment",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dexwin live AI/LLM assessment — tiny Northline ops RAG app (intentionally naive baseline)",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "eval": "node eval/score.js"
+  }
+}
